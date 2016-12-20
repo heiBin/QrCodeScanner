@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <SurfaceView
+            android:id="@+id/preview_view"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_gravity="center" />
+
+        <com.duoyi.provider.qrscan.view.ViewfinderView
+            android:id="@+id/viewfinder_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
+
+    <Button
+        android:id="@+id/decode_language"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#aa000000"
+        android:gravity="center"
+        android:textColor="#ffffff"
+        android:layout_gravity="top" />
+
+    <Button
+        android:id="@+id/decode_file"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#aa000000"
+        android:text="识别相册中的二维码"
+        android:gravity="center"
+        android:textColor="#ffffff"
+        android:layout_gravity="bottom" />
+
+    <ImageView
+        android:id="@+id/fail_result"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</FrameLayout>
