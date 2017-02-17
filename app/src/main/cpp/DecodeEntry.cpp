@@ -71,6 +71,7 @@ const char *decodeZxing(int dataWidth, int dataHeight, int left, int top, int wi
     return NULL;
 }
 
+
 extern "C" jstring Java_com_duoyi_qrdecode_DecodeEntry_decodeFromJNI(JNIEnv *env, jobject thiz,
                                                                      jint decodeCode,
                                                                      jbyteArray data,
@@ -116,13 +117,18 @@ extern "C" jstring Java_com_duoyi_qrdecode_DecodeEntry_decodeFileFromJNI(JNIEnv 
     int y;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            int rgb = pixelsData[i * width + j] & 0x00FFFFFF;
-            int r = rgb & 0xFF;
+            int rgb = pixelsData[i * width + j];
+            int r = (rgb >> 16) & 0xFF;
             int g = (rgb >> 8) & 0xFF;
-            int b = (rgb >> 16) & 0xFF;
-            y = ((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
-            y = y < 0 ? 0 : (y > 255 ? 255 : y);
-            yuv[i * width + j] = (byte) y;
+            int b = rgb & 0xFF;
+            if (r == g && g == b){
+                yuv[i * width + j] = (byte) r;
+            }else{
+                yuv[i * width + j] = (byte) ((r + g + g + b) >> 2);
+            }
+//            y = ((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
+//            y = y < 0 ? 0 : (y > 255 ? 255 : y);
+//            yuv[i * width + j] = (byte) y;
 
         }
     }
@@ -130,6 +136,17 @@ extern "C" jstring Java_com_duoyi_qrdecode_DecodeEntry_decodeFileFromJNI(JNIEnv 
     if ((decodeCode & QRCODE) == QRCODE) {
         const char *result = decodeZxing(width, height, 0, 0, width, height, yuv);
         s = env->NewStringUTF(result);
+        if(s == NULL){
+            char *rotateData = new char[width*height];
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    rotateData[(height-y)*width + width - x] = yuv[x + y * width];
+                }
+            }
+            const char *result = decodeZxing(width, height, 0, 0, width, height, rotateData);
+            s = env->NewStringUTF(result);
+            free(rotateData);
+        }
     }
 
     if (s == NULL && ((decodeCode & BARCODE) == BARCODE)) {
@@ -141,6 +158,8 @@ extern "C" jstring Java_com_duoyi_qrdecode_DecodeEntry_decodeFileFromJNI(JNIEnv 
     free(yuv);
     return s;
 }
+
+
 
 
 

@@ -2,6 +2,12 @@ package com.duoyi.qrdecode;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
+
+import com.duoyi.provider.qrscan.camera.CameraConfigurationManager;
+
+import java.io.IOException;
 
 public class DecodeEntry {
     static {
@@ -9,8 +15,22 @@ public class DecodeEntry {
     }
 
     public static String decodeFromFile(String filename, BarcodeFormat barcodeFormat) {
-        Bitmap bitmap = BitmapFactory.decodeFile(filename);
-        return getPixelsByBitmap(bitmap, barcodeFormat);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        Bitmap scanBitmap;
+        options.inJustDecodeBounds = true; // 先获取原大小
+        scanBitmap = BitmapFactory.decodeFile(filename, options);
+        options.inJustDecodeBounds = false; // 获取新的大小
+
+        int heightSampleSize = (int) (options.outHeight / CameraConfigurationManager.screenHeight);
+        int widhtSampleSize = (int) (options.outWidth / CameraConfigurationManager.screenWidth);
+        int sampleSize = 1;
+        if (heightSampleSize >= 1 || widhtSampleSize >= 1 ){
+            sampleSize = heightSampleSize > widhtSampleSize? heightSampleSize:widhtSampleSize;
+        }
+
+        options.inSampleSize = sampleSize;
+        scanBitmap = BitmapFactory.decodeFile(filename, options);
+        return getPixelsByBitmap(scanBitmap, barcodeFormat);
     }
 
     public static String getPixelsByBitmap(Bitmap bitmap, BarcodeFormat barcodeFormat) {
