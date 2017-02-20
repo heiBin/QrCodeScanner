@@ -10,6 +10,9 @@ import com.duoyi.provider.qrscan.camera.CameraConfigurationManager;
 import java.io.IOException;
 
 public class DecodeEntry {
+    private final static int DEFAULT_WIDTH = 720;
+    private final static int DEFAULT_HEIGHT = 1280;
+
     static {
         System.loadLibrary("qrscan");
     }
@@ -17,12 +20,13 @@ public class DecodeEntry {
     public static String decodeFromFile(String filename, BarcodeFormat barcodeFormat) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         Bitmap scanBitmap;
-        options.inJustDecodeBounds = true; // 先获取原大小
+        options.inJustDecodeBounds = true;
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
         scanBitmap = BitmapFactory.decodeFile(filename, options);
-        options.inJustDecodeBounds = false; // 获取新的大小
+        options.inJustDecodeBounds = false;
 
-        int heightSampleSize = (int) (options.outHeight / CameraConfigurationManager.screenHeight);
-        int widhtSampleSize = (int) (options.outWidth / CameraConfigurationManager.screenWidth);
+        int heightSampleSize = (int)Math.ceil((double)options.outHeight/DEFAULT_HEIGHT);
+        int widhtSampleSize = (int) Math.ceil((double)options.outWidth /DEFAULT_WIDTH);
         int sampleSize = 1;
         if (heightSampleSize >= 1 || widhtSampleSize >= 1 ){
             sampleSize = heightSampleSize > widhtSampleSize? heightSampleSize:widhtSampleSize;

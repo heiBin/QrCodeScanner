@@ -295,4 +295,5 @@ public class MipcaActivityCapture extends Activity implements Callback {
         return super.dispatchKeyEvent(event);
     }
 
+
 }

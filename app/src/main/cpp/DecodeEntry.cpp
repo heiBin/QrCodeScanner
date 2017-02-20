@@ -29,6 +29,8 @@
 #include <zxing/multi/qrcode/QRCodeMultiReader.h>
 #include <zxing/multi/ByQuadrantReader.h>
 #include <zxing/multi/GenericMultipleBarcodeReader.h>
+#include <zxing/common/StringUtils.h>
+#include <syslog.h>
 
 extern "C" {
 #include "zbar/zbar_entry.h"
@@ -62,13 +64,59 @@ const char *decodeZxing(int dataWidth, int dataHeight, int left, int top, int wi
         DecodeHints hints(DecodeHints::DEFAULT_QR_HINT);
         MultiFormatReader reader;
         Ref<Result> result(reader.decode(image, hints));
-
         return result->getText()->getText().c_str();
     }
 
     catch (zxing::Exception &e) {
     }
     return NULL;
+}
+
+bool IsUTF8(const void* pBuffer, long size)
+{
+    bool IsUTF8 = true;
+    unsigned char* start = (unsigned char*)pBuffer;
+    unsigned char* end = (unsigned char*)pBuffer + size;
+    while (start < end)
+    {
+        if (*start < 0x80) // (10000000): value less then 0x80 ASCII char
+        {
+            start++;
+        }
+        else if (*start < (0xC0)) // (11000000): between 0x80 and 0xC0 UTF-8 char
+        {
+            IsUTF8 = false;
+            break;
+        }
+        else if (*start < (0xE0)) // (11100000): 2 bytes UTF-8 char
+        {
+            if (start >= end - 1)
+                break;
+            if ((start[1] & (0xC0)) != 0x80)
+            {
+                IsUTF8 = false;
+                break;
+            }
+            start += 2;
+        }
+        else if (*start < (0xF0)) // (11110000): 3 bytes UTF-8 char
+        {
+            if (start >= end - 2)
+                break;
+            if ((start[1] & (0xC0)) != 0x80 || (start[2] & (0xC0)) != 0x80)
+            {
+                IsUTF8 = false;
+                break;
+            }
+            start += 3;
+        }
+        else
+        {
+            IsUTF8 = false;
+            break;
+        }
+    }
+    return IsUTF8;
 }
 
 
@@ -95,7 +143,15 @@ extern "C" jstring Java_com_duoyi_qrdecode_DecodeEntry_decodeFromJNI(JNIEnv *env
     if ((decodeCode & QRCODE) == QRCODE) {
         const char *result = decodeZxing(dataWidth, dataHeight, left, top, width, height,
                                          rotateData);
+        if(result != NULL && !IsUTF8(result,strlen(result))){
+            env->ReleaseByteArrayElements(data, (jbyte *) buffer, 0);
+            free(rotateData);
+            return NULL;
+
+        }
         s = env->NewStringUTF(result);
+
+
     }
     if (s == NULL && ((decodeCode & BARCODE) == BARCODE)) {
         char *resultBar = decodeZbar(dataWidth, dataHeight, left, top, width, height, rotateData);
@@ -114,7 +170,6 @@ extern "C" jstring Java_com_duoyi_qrdecode_DecodeEntry_decodeFileFromJNI(JNIEnv 
                                                                          jint width, int height) {
     int *pixelsData = env->GetIntArrayElements(pixels, JNI_FALSE);
     char *yuv = new char[width * height];
-    int y;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             int rgb = pixelsData[i * width + j];
@@ -126,15 +181,15 @@ extern "C" jstring Java_com_duoyi_qrdecode_DecodeEntry_decodeFileFromJNI(JNIEnv 
             }else{
                 yuv[i * width + j] = (byte) ((r + g + g + b) >> 2);
             }
-//            y = ((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
-//            y = y < 0 ? 0 : (y > 255 ? 255 : y);
-//            yuv[i * width + j] = (byte) y;
-
         }
     }
     jstring s = NULL;
     if ((decodeCode & QRCODE) == QRCODE) {
         const char *result = decodeZxing(width, height, 0, 0, width, height, yuv);
+        if(result != NULL  &&  !IsUTF8(result,strlen(result))) {
+            syslog(1,"222");
+            goto end;
+        }
         s = env->NewStringUTF(result);
         if(s == NULL){
             char *rotateData = new char[width*height];
@@ -144,20 +199,28 @@ extern "C" jstring Java_com_duoyi_qrdecode_DecodeEntry_decodeFileFromJNI(JNIEnv 
                 }
             }
             const char *result = decodeZxing(width, height, 0, 0, width, height, rotateData);
-            s = env->NewStringUTF(result);
             free(rotateData);
+            if(result != NULL && !IsUTF8(result,strlen(result))) {
+                syslog(1,"333");
+                goto end;
+            }
+            s = env->NewStringUTF(result);
+
         }
+
     }
 
     if (s == NULL && ((decodeCode & BARCODE) == BARCODE)) {
         char *resultBar = decodeZbar(width, height, 0, 0, width, height, yuv);
         s = env->NewStringUTF(resultBar);
     }
-
+    end:
     env->ReleaseIntArrayElements(pixels, pixelsData, JNI_FALSE);
     free(yuv);
     return s;
 }
+
+
 
 
 

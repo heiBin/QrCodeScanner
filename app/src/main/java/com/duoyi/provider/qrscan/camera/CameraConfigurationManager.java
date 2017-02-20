@@ -39,8 +39,6 @@ public final class CameraConfigurationManager {
 
     private static final int TEN_DESIRED_ZOOM = 27;
     private static final int DESIRED_SHARPNESS = 30;
-    public static int screenWidth = 720;
-    public static int screenHeight = 1080;
 
     private static final Pattern COMMA_PATTERN = Pattern.compile(",");
 
@@ -61,8 +59,6 @@ public final class CameraConfigurationManager {
         WindowManager manager = (WindowManager) context
                 .getSystemService(Context.WINDOW_SERVICE);
         Display display = manager.getDefaultDisplay();
-        screenWidth = display.getWidth();
-        screenHeight = display.getHeight();
         screenResolution = new Point(display.getWidth(), display.getHeight());
         Point screen = new Point();
         screen.x = screenResolution.y;

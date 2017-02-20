@@ -6,20 +6,20 @@ android {
     defaultConfig {
         applicationId "com.duoyi.provider.qrscan"
         minSdkVersion 15
-        targetSdkVersion 25
+        targetSdkVersion 21
         versionCode 2
-        versionName "2.0"
+        versionName "3.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++11 -frtti -fexceptions"
-                abiFilters "armeabi"
+//                abiFilters "armeabi"
             }
         }
     }
     buildTypes {
-        release {
-            minifyEnabled false
+        release{
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
